@@ -1,6 +1,9 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { CopilotKit } from "@copilotkit/react-core";
+import { ThemeProvider } from "@/components/provider-theme";
+import { Toaster } from "@/components/ui/sonner";
+import { cn } from "@/lib/utils";
 import "./globals.css";
 import "@copilotkit/react-ui/styles.css";
 
@@ -15,8 +18,14 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Nosana Mastra Agent Kit",
-  description: "An example of using CopilotKit with Mastra agents.",
+  title: {
+    template: '%s | CordAi',
+    default: 'CordAi - The Intelligent Copilot for Solana',
+  },
+  description: 'The Intelligent Copilot elevating your Solana experience.',
+  icons: {
+    icon: '/logo.svg',
+  },
 };
 
 export default function RootLayout({
@@ -25,11 +34,26 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
-        <CopilotKit runtimeUrl="/api/copilotkit" agent="weatherAgent">
-          {children}
-        </CopilotKit>
+    <html lang="en" suppressHydrationWarning>
+      <body
+        className={cn(
+          `${geistSans.variable} ${geistMono.variable}`,
+          'overflow-x-hidden antialiased',
+        )}
+      >
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="system"
+          enableSystem
+          disableTransitionOnChange
+        >
+          <CopilotKit runtimeUrl="/api/copilotkit" agent="weatherAgent">
+            <main className="sticky bottom-0 overflow-hidden md:overflow-visible">
+              {children}
+              <Toaster />
+            </main>
+          </CopilotKit>
+        </ThemeProvider>
       </body>
     </html>
   );
