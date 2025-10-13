@@ -1,256 +1,387 @@
-"use client";
+'use client';
 
-import { useCoAgent, useCopilotAction } from "@copilotkit/react-core";
-import { CopilotKitCSSProperties, CopilotSidebar } from "@copilotkit/react-ui";
-import { useState } from "react";
-import { AgentState as AgentStateSchema } from "@/mastra/agents";
-import { z } from "zod";
-import { WeatherToolResult } from "@/mastra/tools";
+import { useRef, useState } from 'react';
 
-type AgentState = z.infer<typeof AgentStateSchema>;
+import Image from 'next/image';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
-export default function CopilotKitPage() {
-  const [themeColor, setThemeColor] = useState("#6366f1");
+// import { useLogin } from '@privy-io/react-auth'; // Temporarily disabled for hackathon
+import { GitHubLogoIcon } from '@radix-ui/react-icons';
+import { RiTwitterXFill } from '@remixicon/react';
+import { motion, useScroll, useTransform } from 'framer-motion';
+import {
+  ActivityIcon,
+  BookOpenIcon,
+  BrainCircuitIcon,
+  LinkIcon,
+  ShieldIcon,
+  ZapIcon,
+} from 'lucide-react';
 
-  // 🪁 Frontend Actions: https://docs.copilotkit.ai/guides/frontend-actions
-  useCopilotAction({
-    name: "setThemeColor",
-    parameters: [{
-      name: "themeColor",
-      description: "The theme color to set. Make sure to pick nice colors.",
-      required: true,
-    }],
-    handler({ themeColor }) {
-      setThemeColor(themeColor);
-    },
-  });
+import { Brand } from '@/components/logo';
+import { AiParticlesBackground } from '@/components/ui/ai-particles-background';
+import AnimatedShinyText from '@/components/ui/animated-shiny-text';
+import { BentoCard, BentoGrid } from '@/components/ui/bento-grid';
+import BlurFade from '@/components/ui/blur-fade';
+import { BorderBeam } from '@/components/ui/border-beam';
+import { Button } from '@/components/ui/button';
+import { IntegrationsBackground } from '@/components/ui/integrations-background';
+import Marquee from '@/components/ui/marquee';
+import { RainbowButton } from '@/components/ui/rainbow-button';
+import { cn } from '@/lib/utils';
 
-  return (
-    <main style={{ "--copilot-kit-primary-color": themeColor } as CopilotKitCSSProperties}>
-      <YourMainContent themeColor={themeColor} />
-      <CopilotSidebar
-        clickOutsideToClose={false}
-        defaultOpen={true}
-        labels={{
-          title: "Popup Assistant",
-          initial: "👋 Hi, there! You're chatting with an agent. This agent comes with a few tools to get you started.\n\nFor example you can try:\n- **Frontend Tools**: \"Set the theme to orange\"\n- **Shared State**: \"Write a proverb about AI\"\n- **Generative UI**: \"Get the weather in SF\"\n\nAs you interact with the agent, you'll see the UI update in real-time to reflect the agent's **state**, **tool calls**, and **progress**."
-        }}
-      />
-    </main>
-  );
-}
+const navItems = [
+  { label: 'X', href: 'https://x.com/thecorgod1234', icon: RiTwitterXFill },
+  { label: 'GitHub', href: 'https://github.com/EmadQureshiKhi/agent-challenge-Cor', icon: GitHubLogoIcon },
+];
 
-function YourMainContent({ themeColor }: { themeColor: string }) {
-  // 🪁 Shared State: https://docs.copilotkit.ai/coagents/shared-state
-  const { state, setState } = useCoAgent<AgentState>({
-    name: "weatherAgent",
-    initialState: {
-      proverbs: [
-        "CopilotKit may be new, but its the best thing since sliced bread.",
-      ],
-    },
-  })
-
-  //🪁 Generative UI: https://docs.copilotkit.ai/coagents/generative-ui
-  useCopilotAction({
-    name: "weatherTool",
-    description: "Get the weather for a given location.",
-    available: "frontend",
-    parameters: [
-      { name: "location", type: "string", required: true },
-    ],
-    render: ({ args, result, status }) => {
-      return <WeatherCard
-        location={args.location}
-        themeColor={themeColor}
-        result={result}
-        status={status}
-      />
-    },
-  });
-
-  useCopilotAction({
-    name: "updateWorkingMemory",
-    available: "frontend",
-    render: ({ args }) => {
-      return <div style={{ backgroundColor: themeColor }} className="rounded-2xl max-w-md w-full text-white p-4">
-        <p>✨ Memory updated</p>
-        <details className="mt-2">
-          <summary className="cursor-pointer text-white">See updates</summary>
-          <pre style={{ whiteSpace: "pre-wrap", wordBreak: "break-word" }} className="overflow-x-auto text-sm bg-white/20 p-4 rounded-lg mt-2">
-            {JSON.stringify(args, null, 2)}
-          </pre>
-        </details>
-      </div>
-    },
-  });
+const Header = ({ handleLogin }: { handleLogin: () => void }) => {
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   return (
-    <div
-      style={{ backgroundColor: themeColor }}
-      className="h-screen w-screen flex justify-center items-center flex-col transition-colors duration-300"
-    >
-      <div className="bg-white/20 backdrop-blur-md p-8 rounded-2xl shadow-xl max-w-2xl w-full">
-        <h1 className="text-4xl font-bold text-white mb-2 text-center">Proverbs</h1>
-        <p className="text-gray-200 text-center italic mb-6">This is a demonstrative page, but it could be anything you want! 🪁</p>
-        <hr className="border-white/20 my-6" />
-        <div className="flex flex-col gap-3">
-          {state.proverbs?.map((proverb, index) => (
-            <div
-              key={index}
-              className="bg-white/15 p-4 rounded-xl text-white relative group hover:bg-white/20 transition-all"
-            >
-              <p className="pr-8">{proverb}</p>
-              <button
-                onClick={() => setState({
-                  ...state,
-                  proverbs: state.proverbs?.filter((_, i) => i !== index),
+    <BlurFade delay={0.1} className="relative z-50">
+      <header className="fixed left-0 right-0 top-0">
+        <div className="mx-auto max-w-6xl px-4 py-4">
+          <div className="rounded-xl border border-border/50 bg-muted/70 shadow-lg backdrop-blur-md">
+            <div className="flex items-center justify-between px-4 py-2">
+              <div className="relative">
+                <Brand className="scale-95 transition-opacity hover:opacity-80" />
+              </div>
+
+              <nav className="hidden md:ml-auto md:mr-8 md:flex">
+                {navItems.map((item) => {
+                  const Icon = item.icon;
+                  return (
+                    <a
+                      key={item.label}
+                      href={item.href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="group relative flex items-center gap-1.5 px-4 py-1.5 text-sm font-medium text-muted-foreground transition-colors hover:text-primary"
+                    >
+                      <Icon className="h-4 w-4" />
+                      {item.label}
+                      <span className="absolute inset-x-4 -bottom-px h-px scale-x-0 bg-gradient-to-r from-primary/0 via-primary/70 to-primary/0 transition-transform duration-300 group-hover:scale-x-100" />
+                    </a>
+                  );
                 })}
-                className="absolute right-3 top-3 opacity-0 group-hover:opacity-100 transition-opacity 
-                  bg-red-500 hover:bg-red-600 text-white rounded-full h-6 w-6 flex items-center justify-center"
+              </nav>
+
+              <div className="flex items-center gap-3">
+                <Button
+                  variant="outline"
+                  className="h-9 rounded-lg px-4 text-sm transition-colors hover:bg-primary hover:text-primary-foreground"
+                  onClick={handleLogin}
+                >
+                  Login
+                </Button>
+
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-9 w-9 md:hidden"
+                  onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="24"
+                    height="24"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="h-4 w-4"
+                  >
+                    <line x1="4" x2="20" y1="12" y2="12" />
+                    <line x1="4" x2="20" y1="6" y2="6" />
+                    <line x1="4" x2="20" y1="18" y2="18" />
+                  </svg>
+                </Button>
+              </div>
+            </div>
+          </div>
+
+          {isMobileMenuOpen && (
+            <div className="absolute left-4 right-4 top-full mt-2 rounded-lg border border-border/50 bg-background/95 p-3 shadow-lg backdrop-blur-md md:hidden">
+              <nav className="flex flex-col gap-1.5">
+                {navItems.map((item) => {
+                  const Icon = item.icon;
+                  return (
+                    <a
+                      key={item.label}
+                      href={item.href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-primary/5 hover:text-primary"
+                      onClick={() => setIsMobileMenuOpen(false)}
+                    >
+                      <Icon className="h-4 w-4" />
+                      {item.label}
+                    </a>
+                  );
+                })}
+              </nav>
+            </div>
+          )}
+        </div>
+      </header>
+    </BlurFade>
+  );
+};
+
+const Hero = ({ handleLogin }: { handleLogin: () => void }) => {
+  const productRef = useRef<HTMLDivElement>(null);
+  const { scrollYProgress } = useScroll({
+    target: productRef,
+    offset: ['start end', 'end start'],
+  });
+
+  const rotateX = useTransform(scrollYProgress, [0, 0.5], [30, 0]);
+  const scale = useTransform(scrollYProgress, [0, 0.5], [0.8, 1]);
+  const opacity = useTransform(scrollYProgress, [0, 0.5], [0.6, 1]);
+
+  return (
+    <section className="relative pt-[5.75rem]" ref={productRef}>
+      {/* Content */}
+      <div className="relative mx-auto max-w-screen-xl px-6 pb-6 pt-12 text-center md:pb-8 md:pt-16">
+        <div className="mx-auto max-w-3xl">
+          <BlurFade delay={0.3} className="pointer-events-none select-none">
+            <div className="inline-flex items-center rounded-full border border-primary/20 bg-muted/80 px-4 py-1.5 shadow-lg backdrop-blur-sm">
+              <span className="text-sm font-medium text-primary">
+                ✨ Introducing CordAi Agent
+              </span>
+            </div>
+
+            <h1 className="mt-6 text-4xl font-bold tracking-tight md:text-5xl lg:text-6xl">
+              The{' '}
+              <AnimatedShinyText className="inline">
+                <span>Intelligent Copilot</span>
+              </AnimatedShinyText>{' '}
+              for <span>Solana</span>
+            </h1>
+
+            <p className="mt-4 text-lg text-muted-foreground">
+              Elevate your Solana experience with AI-powered insights and
+              delegated actions
+            </p>
+          </BlurFade>
+
+          <BlurFade delay={0.4}>
+            <div className="mt-8">
+              <RainbowButton
+                onClick={handleLogin}
+                className="h-12 min-w-[180px] text-base transition-all duration-300 hover:scale-105"
               >
-                ✕
-              </button>
+                Getting Started
+              </RainbowButton>
             </div>
-          ))}
+          </BlurFade>
         </div>
-        {state.proverbs?.length === 0 && <p className="text-center text-white/80 italic my-8">
-          No proverbs yet. Ask the assistant to add some!
-        </p>}
       </div>
-    </div>
-  );
-}
 
-// Weather card component where the location and themeColor are based on what the agent
-// sets via tool calls.
-function WeatherCard({
-  location,
-  themeColor,
-  result,
-  status
-}: {
-  location?: string,
-  themeColor: string,
-  result: WeatherToolResult,
-  status: "inProgress" | "executing" | "complete"
-}) {
-  if (status !== "complete") {
-    return (
-      <div
-        className="rounded-xl shadow-xl mt-6 mb-4 max-w-md w-full"
-        style={{ backgroundColor: themeColor }}
+      {/* Product Preview */}
+      <div className="relative w-full">
+        <BlurFade delay={0.6} className="mx-auto max-w-screen-2xl px-6">
+          <div className="relative">
+            {/* Product images */}
+            <motion.div
+              initial={{ y: 60, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              style={{
+                rotateX,
+                scale,
+                opacity,
+                transformPerspective: 1000,
+              }}
+              transition={{
+                type: 'spring',
+                stiffness: 50,
+                damping: 20,
+                delay: 0.5,
+              }}
+              className="relative mx-auto w-full max-w-[1200px] will-change-transform"
+            >
+              <div className="group relative overflow-hidden rounded-2xl border bg-card shadow-2xl">
+                {/* Light mode image */}
+                <div className="relative dark:hidden">
+                  <Image
+                    src="/product.png"
+                    alt="Neur AI Interface"
+                    width={1200}
+                    height={675}
+                    className="w-full rounded-2xl"
+                    priority
+                  />
+                </div>
+                {/* Dark mode image */}
+                <div className="relative hidden dark:block">
+                  <Image
+                    src="/product_dark.png"
+                    alt="Neur AI Interface"
+                    width={1200}
+                    height={675}
+                    className="w-full rounded-2xl"
+                    priority
+                  />
+                </div>
+                <BorderBeam
+                  className="opacity-0 group-hover:opacity-100"
+                  duration={10}
+                  size={300}
+                />
+              </div>
+
+              {/* Decorative elements */}
+              <div className="absolute -left-4 -top-4 h-72 w-72 animate-blob rounded-full bg-primary/5 mix-blend-multiply blur-xl" />
+              <div className="animation-delay-2000 absolute -right-4 -top-4 h-72 w-72 animate-blob rounded-full bg-secondary/5 mix-blend-multiply blur-xl" />
+            </motion.div>
+          </div>
+        </BlurFade>
+      </div>
+    </section>
+  );
+};
+
+const features = [
+  {
+    Icon: BrainCircuitIcon,
+    name: 'Cutting-Edge AI Intelligence',
+    description:
+      "Harness the power of the world's most advanced AI models, including Claude 3.5-Sonnet and GPT-4o, to intelligently analyze your Solana transactions in real-time, providing data-driven insights and seamless automated actions.",
+    className: 'col-span-1 sm:col-span-3 lg:col-span-2',
+    background: (
+      <div className="absolute inset-0 flex items-center justify-center opacity-20">
+        <div className="relative h-full w-full">
+          <div className="absolute left-10 top-10 h-32 w-32 animate-blob rounded-full bg-primary/30 mix-blend-multiply blur-xl"></div>
+          <div className="animation-delay-2000 absolute right-10 top-10 h-32 w-32 animate-blob rounded-full bg-secondary/30 mix-blend-multiply blur-xl"></div>
+          <div className="animation-delay-4000 absolute bottom-10 left-20 h-32 w-32 animate-blob rounded-full bg-accent/30 mix-blend-multiply blur-xl"></div>
+        </div>
+      </div>
+    ),
+  },
+  {
+    Icon: ZapIcon,
+    name: 'Seamless Execution',
+    description:
+      'Experience ultra-efficient, frictionless transactions powered by our deep Solana integration. Enjoy smooth, rapid execution without the need for compromise.',
+    className: 'col-span-1 sm:col-span-3 lg:col-span-1',
+    background: (
+      <Marquee
+        pauseOnHover
+        className="absolute inset-0 [--duration:15s] [mask-image:linear-gradient(to_top,transparent_40%,#000_100%)]"
       >
-        <div className="bg-white/20 p-4 w-full">
-          <p className="text-white animate-pulse">Loading weather for {location}...</p>
-        </div>
+        {Array.from({ length: 5 }).map((_, idx) => (
+          <div
+            key={idx}
+            className="mx-2 flex items-center gap-2 rounded-xl border border-primary/20 bg-muted/30 px-3 py-2"
+          >
+            <div className="text-sm font-medium">
+              {idx % 2 === 0 ? 'Instant, frictionless' : 'Seamless transaction'}
+            </div>
+          </div>
+        ))}
+      </Marquee>
+    ),
+  },
+  {
+    Icon: LinkIcon,
+    name: 'Comprehensive Ecosystem Integration',
+    description:
+      "Effortlessly connect with the full spectrum of Solana's protocols and services. Our platform is designed for seamless AI-powered collaboration, ensuring full synergy with the ecosystem.",
+    className: 'col-span-1 sm:col-span-3 lg:col-span-3',
+    background: <IntegrationsBackground />,
+  },
+  {
+    Icon: ZapIcon,
+    name: 'Reliable & User-Focused',
+    description:
+      'Engineered for performance and security, our full-stack application is built to deliver seamless experiences for every user. We prioritize innovation, continuous improvement, and real-world impact to empower your journey in the Solana AI ecosystem.',
+    className: 'col-span-1 sm:col-span-3 lg:col-span-1',
+    background: (
+      <div className="absolute inset-0 flex items-center justify-center opacity-20">
+        <div className="h-32 w-32 animate-pulse rounded-full border-4 border-accent"></div>
       </div>
-    )
-  }
+    ),
+  },
+  {
+    Icon: ActivityIcon,
+    name: 'AI-Driven Automations & Agents',
+    description:
+      'Revolutionize your workflows with powerful AI agents and custom automations designed to handle complex tasks, to streamline your operations even further.',
+    className: 'col-span-1 sm:col-span-3 lg:col-span-2',
+    background: (
+      <div className="absolute inset-0 flex items-center justify-center opacity-20">
+        <div className="h-32 w-32 animate-pulse rounded-full border-4 border-accent"></div>
+      </div>
+    ),
+  },
+];
+
+const Features = () => {
+  return (
+    <BlurFade delay={0.5} className="relative py-16 sm:py-24">
+      <div className="mx-auto max-w-6xl px-4 sm:px-6">
+        <div className="mb-12 text-center sm:mb-16">
+          <h2 className="mb-3 text-2xl font-bold tracking-tight sm:mb-4 sm:text-4xl">
+            Tailored for Solana
+          </h2>
+          <p className="text-sm text-muted-foreground sm:text-base">
+            Seamless integration with the world&apos;s leading AI-models
+          </p>
+        </div>
+
+        <BentoGrid className="grid-rows-[auto]">
+          {features.map((feature, idx) => (
+            <BentoCard
+              key={idx}
+              {...feature}
+              className={cn(
+                'group relative overflow-hidden rounded-2xl border bg-card p-4 shadow-lg transition-all hover:shadow-xl sm:rounded-3xl sm:p-6',
+                feature.className,
+              )}
+            />
+          ))}
+        </BentoGrid>
+      </div>
+    </BlurFade>
+  );
+};
+
+const Footer = () => {
+  return (
+    <footer className="mt-auto py-4">
+      <BlurFade
+        delay={0.5}
+        className="flex items-center justify-center gap-3 text-sm text-muted-foreground"
+      >
+        <p>© 2025 CordAI. All rights reserved.</p>
+        
+        
+      </BlurFade>
+    </footer>
+  );
+};
+
+export default function Home() {
+  const router = useRouter();
+  
+  // Simplified for hackathon - navigate directly to chat
+  const handleLogin = () => {
+    router.push('/chat');
+  };
 
   return (
-    <div
-      style={{ backgroundColor: themeColor }}
-      className="rounded-xl shadow-xl mt-6 mb-4 max-w-md w-full"
-    >
-      <div className="bg-white/20 p-4 w-full">
-        <div className="flex items-center justify-between">
-          <div>
-            <h3 className="text-xl font-bold text-white capitalize">{location}</h3>
-            <p className="text-white">Current Weather</p>
-          </div>
-          <WeatherIcon conditions={result?.conditions} />
-        </div>
-
-        <div className="mt-4 flex items-end justify-between">
-          <div className="text-3xl font-bold text-white">
-            <span className="">
-              {result?.temperature}° C
-            </span>
-            <span className="text-sm text-white/50">
-              {" / "}
-              {((result?.temperature * 9) / 5 + 32).toFixed(1)}° F
-            </span>
-          </div>
-          <div className="text-sm text-white">{result?.conditions}</div>
-        </div>
-
-        <div className="mt-4 pt-4 border-t border-white">
-          <div className="grid grid-cols-3 gap-2 text-center">
-            <div>
-              <p className="text-white text-xs">Humidity</p>
-              <p className="text-white font-medium">{result?.humidity}%</p>
-            </div>
-            <div>
-              <p className="text-white text-xs">Wind</p>
-              <p className="text-white font-medium">{result?.windSpeed} mph</p>
-            </div>
-            <div>
-              <p className="text-white text-xs">Feels Like</p>
-              <p className="text-white font-medium">{result?.feelsLike}°</p>
-            </div>
-          </div>
-        </div>
-      </div>
+    <div className="flex flex-col min-h-screen">
+      <AiParticlesBackground />
+      <Header handleLogin={handleLogin} />
+      <main className="flex-1">
+        <Hero handleLogin={handleLogin} />
+        <Features />
+      </main>
+      <Footer />
     </div>
-  );
-}
-
-function WeatherIcon({ conditions }: { conditions: string }) {
-  if (!conditions) return null;
-
-  if (
-    conditions.toLowerCase().includes("clear") ||
-    conditions.toLowerCase().includes("sunny")
-  ) {
-    return <SunIcon />;
-  }
-
-  if (
-    conditions.toLowerCase().includes("rain") ||
-    conditions.toLowerCase().includes("drizzle") ||
-    conditions.toLowerCase().includes("snow") ||
-    conditions.toLowerCase().includes("thunderstorm")
-  ) {
-    return <RainIcon />;
-  }
-
-  if (
-    conditions.toLowerCase().includes("fog") ||
-    conditions.toLowerCase().includes("cloud") ||
-    conditions.toLowerCase().includes("overcast")
-  ) {
-    return <CloudIcon />;
-  }
-
-  return <CloudIcon />;
-}
-
-// Simple sun icon for the weather card
-function SunIcon() {
-  return (
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-14 h-14 text-yellow-200">
-      <circle cx="12" cy="12" r="5" />
-      <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" strokeWidth="2" stroke="currentColor" />
-    </svg>
-  );
-}
-
-function RainIcon() {
-  return (
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-14 h-14 text-blue-200">
-      {/* Cloud */}
-      <path d="M7 15a4 4 0 0 1 0-8 5 5 0 0 1 10 0 4 4 0 0 1 0 8H7z" fill="currentColor" opacity="0.8" />
-      {/* Rain drops */}
-      <path d="M8 18l2 4M12 18l2 4M16 18l2 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" fill="none" />
-    </svg>
-  );
-}
-
-function CloudIcon() {
-  return (
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-14 h-14 text-gray-200">
-      <path d="M7 15a4 4 0 0 1 0-8 5 5 0 0 1 10 0 4 4 0 0 1 0 8H7z" fill="currentColor" />
-    </svg>
   );
 }
