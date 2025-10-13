@@ -1,11 +1,9 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
-import { CopilotKit } from "@copilotkit/react-core";
 import { ThemeProvider } from "@/components/provider-theme";
 import { Toaster } from "@/components/ui/sonner";
 import { cn } from "@/lib/utils";
 import "./globals.css";
-import "@copilotkit/react-ui/styles.css";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -47,12 +45,8 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <CopilotKit runtimeUrl="/api/copilotkit" agent="weatherAgent">
-            <main className="sticky bottom-0 overflow-hidden md:overflow-visible">
-              {children}
-              <Toaster />
-            </main>
-          </CopilotKit>
+          {children}
+          <Toaster />
         </ThemeProvider>
       </body>
     </html>
