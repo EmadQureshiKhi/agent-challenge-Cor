@@ -1,0 +1,225 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model SavedPrompt {
+  id             String    @id @default(cuid())
+  userId         String
+  title          String    
+  content        String
+  usageFrequency Int       @default(0)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  lastUsedAt     DateTime?
+  isFavorite     Boolean   @default(false)
+  user           User      @relation(fields: [userId], references: [id])
+
+  @@index([userId, lastUsedAt], map: "idx_userId_lastUsedAt")
+  @@map("saved_prompts")
+}
+
+model User {
+  id              String         @id @default(cuid())
+  privyId         String         @unique
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  earlyAccess     Boolean        @default(false)
+  degenMode       Boolean        @default(false)
+  referralCode    String?        @unique
+  referringUserId String?
+  Action          Action[]
+  conversations   Conversation[]
+  Rule            Rule[]
+  SavedPrompts    SavedPrompt[]
+  subscription    Subscription?
+  TelegramChat    TelegramChat?
+  tokenStats      TokenStat[]
+  wallets         Wallet[]
+
+  @@map("users")
+}
+
+model Wallet {
+  id                  String       @id @default(cuid())
+  ownerId             String
+  name                String
+  publicKey           String
+  encryptedPrivateKey String?
+  createdAt           DateTime     @default(now())
+  updatedAt           DateTime     @updatedAt
+  active              Boolean      @default(true)
+  chain               Chain        @default(SOLANA)
+  delegated           Boolean      @default(false)
+  walletSource        WalletSource @default(CUSTOM)
+  owner               User         @relation(fields: [ownerId], references: [id])
+
+  @@unique([ownerId, publicKey])
+  @@map("wallets")
+}
+
+model Conversation {
+  id            String     @id @default(uuid())
+  userId        String
+  title         String
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+  visibility    Visibility @default(PRIVATE)
+  lastMessageAt DateTime?
+  lastReadAt    DateTime?  @default(now())
+  Action        Action[]
+  user          User       @relation(fields: [userId], references: [id])
+  messages      Message[]
+
+  @@map("conversations")
+}
+
+model Message {
+  id                       String       @id @default(uuid())
+  conversationId           String
+  role                     String
+  content                  String?
+  createdAt                DateTime     @default(now())
+  experimental_attachments Json?
+  toolInvocations          Json?
+  conversation             Conversation @relation(fields: [conversationId], references: [id])
+
+  @@map("messages")
+}
+
+model Rule {
+  id        String   @id @default(cuid())
+  userId    String
+  name      String   
+  field     String   
+  operator  Operator
+  value     String   
+  triggered Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id])
+
+  @@map("rules")
+}
+
+model Action {
+  id             String       @id @default(cuid())
+  userId         String
+  conversationId String
+  triggeredBy    String       @default("[]")
+  stoppedBy      String       @default("[]")
+  frequency      Int?
+  maxExecutions  Int?
+  description    String       
+  actionType     String       
+  params         Json?
+  timesExecuted  Int          @default(0)
+  lastExecutedAt DateTime?
+  triggered      Boolean      @default(false)
+  paused         Boolean      @default(false)
+  completed      Boolean      @default(false)
+  priority       Int          @default(0)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  lastFailureAt  DateTime?
+  lastSuccessAt  DateTime?
+  startTime      DateTime?
+  name           String?      
+  conversation   Conversation @relation(fields: [conversationId], references: [id])
+  user           User         @relation(fields: [userId], references: [id])
+
+  @@index([triggeredBy], map: "triggeredBy_idx")
+  @@index([stoppedBy], map: "stoppedBy_idx")
+  @@map("actions")
+}
+
+model TokenStat {
+  id               String   @id @default(cuid())
+  userId           String
+  messageIds       String   @default("[]")
+  totalTokens      Int
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  completionTokens Int
+  promptTokens     Int
+  user             User     @relation(fields: [userId], references: [id])
+
+  @@map("token_stats")
+}
+
+model TelegramChat {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  username  String
+  chatId    String?
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id])
+
+  @@map("telegram_chats")
+}
+
+model Subscription {
+  id              String                @id @default(cuid())
+  userId          String                @unique
+  createdAt       DateTime              @default(now())
+  active          Boolean               @default(true)
+  startDate       DateTime              @default(now())
+  nextPaymentDate DateTime
+  endDate         DateTime?
+  billingCycle    BillingCycle          @default(MONTHLY)
+  payments        SubscriptionPayment[]
+  user            User                  @relation(fields: [userId], references: [id])
+
+  @@map("subscriptions")
+}
+
+model SubscriptionPayment {
+  id              String        @id @default(cuid())
+  subscriptionId  String
+  paymentDate     DateTime
+  amount          Decimal
+  status          PaymentStatus
+  failureReason   String?
+  failureCode     Int?
+  transactionHash String?
+  createdAt       DateTime      @default(now())
+  subscription    Subscription  @relation(fields: [subscriptionId], references: [id])
+
+  @@map("subscription_payments")
+}
+
+enum Operator {
+  eq
+  lt
+  gt
+  contains
+}
+
+enum Visibility {
+  PRIVATE
+  PUBLIC
+}
+
+enum WalletSource {
+  CUSTOM
+  PRIVY
+}
+
+enum Chain {
+  SOLANA
+}
+
+enum BillingCycle {
+  MONTHLY
+  YEARLY
+}
+
+enum PaymentStatus {
+  SUCCESS
+  FAILED
+  PENDING
+}
