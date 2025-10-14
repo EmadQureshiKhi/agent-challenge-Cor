@@ -87,7 +87,7 @@ export const AppSidebarUser = () => {
             <DropdownMenuGroup>
               {/* Follow us on X */}
               <DropdownMenuItem
-                onClick={() => window.open('https://x.com/CordAILabs', '_blank')}
+                onClick={() => window.open('https://x.com/thecorgod1234', '_blank')}
               >
                 <RiTwitterXFill className="mr-2 h-4 w-4" />
                 Follow us on X
@@ -101,12 +101,12 @@ export const AppSidebarUser = () => {
                 </DropdownMenuItem>
               </Link>
 
-              {/* Docs */}
+              {/* GitHub */}
               <DropdownMenuItem
-                onClick={() => window.open('https://cordais-organization.gitbook.io/cordai', '_blank')}
+                onClick={() => window.open('https://github.com/EmadQureshiKhi/agent-challenge-Cor', '_blank')}
               >
                 <BookOpen className="mr-2 h-4 w-4" />
-                Docs
+                GitHub
               </DropdownMenuItem>
 
               {/* Account */}

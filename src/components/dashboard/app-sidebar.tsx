@@ -28,9 +28,12 @@ const AppSidebarHeader = () => {
   return (
     <SidebarHeader>
       <div className="flex items-center justify-between px-1">
-        <span className="pl-2 text-lg font-medium tracking-tight group-data-[collapsible=icon]:hidden">
+        <Link 
+          href="/" 
+          className="pl-2 text-lg font-medium tracking-tight transition-opacity hover:opacity-80 group-data-[collapsible=icon]:hidden"
+        >
           CordAi
-        </span>
+        </Link>
         <div className="flex items-center gap-1.5">
           <ThemeToggle />
           <div className="flex items-center gap-1.5 group-data-[collapsible=icon]:hidden">
@@ -66,9 +69,9 @@ const ExploreItems = [
     external: false,
   },
   {
-    title: 'Docs',
-    url: 'https://cordais-organization.gitbook.io/cordai',
-    segment: 'docs',
+    title: 'GitHub',
+    url: 'https://github.com/EmadQureshiKhi/agent-challenge-Cor',
+    segment: 'github',
     icon: BookOpen,
     external: true,
   },
