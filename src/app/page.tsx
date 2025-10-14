@@ -6,7 +6,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
-// import { useLogin } from '@privy-io/react-auth'; // Temporarily disabled for hackathon
+import { WalletButton } from '@/components/wallet-button';
 import { GitHubLogoIcon } from '@radix-ui/react-icons';
 import { RiTwitterXFill } from '@remixicon/react';
 import { motion, useScroll, useTransform } from 'framer-motion';
@@ -69,13 +69,7 @@ const Header = ({ handleLogin }: { handleLogin: () => void }) => {
               </nav>
 
               <div className="flex items-center gap-3">
-                <Button
-                  variant="outline"
-                  className="h-9 rounded-lg px-4 text-sm transition-colors hover:bg-primary hover:text-primary-foreground"
-                  onClick={handleLogin}
-                >
-                  Login
-                </Button>
+                <WalletButton />
 
                 <Button
                   variant="ghost"
@@ -368,17 +362,16 @@ const Footer = () => {
 export default function Home() {
   const router = useRouter();
   
-  // Simplified for hackathon - navigate directly to chat
-  const handleLogin = () => {
+  const handleGetStarted = () => {
     router.push('/chat');
   };
 
   return (
     <div className="flex flex-col min-h-screen">
       <AiParticlesBackground />
-      <Header handleLogin={handleLogin} />
+      <Header handleLogin={handleGetStarted} />
       <main className="flex-1">
-        <Hero handleLogin={handleLogin} />
+        <Hero handleLogin={handleGetStarted} />
         <Features />
       </main>
       <Footer />
