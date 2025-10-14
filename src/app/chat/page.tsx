@@ -1,6 +1,8 @@
 'use client';
 
 import { useState, useMemo } from 'react';
+import { useWallet } from '@solana/wallet-adapter-react';
+import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
 import BlurFade from '@/components/ui/blur-fade';
 import { Card } from '@/components/ui/card';
 import TypingAnimation from '@/components/ui/typing-animation';
@@ -45,9 +47,27 @@ function SectionTitle({ children }: SectionTitleProps) {
 }
 
 export default function ChatPage() {
+  const { publicKey } = useWallet();
   const [showChat, setShowChat] = useState(false);
   const [input, setInput] = useState('');
   const [initialMessage, setInitialMessage] = useState('');
+
+  // Show wallet connection prompt if not connected
+  if (!publicKey) {
+    return (
+      <div className="flex min-h-screen flex-col items-center justify-center bg-background px-4">
+        <BlurFade delay={0.1}>
+          <div className="text-center">
+            <h1 className="mb-4 text-3xl font-bold">Connect Your Wallet</h1>
+            <p className="mb-8 text-muted-foreground">
+              Please connect your Solana wallet to use CordAi
+            </p>
+            <WalletMultiButton className="!h-12 !px-6 !text-base" />
+          </div>
+        </BlurFade>
+      </div>
+    );
+  }
 
   const handleSuggestionClick = (prompt: string) => {
     setInput(prompt);
@@ -103,6 +123,33 @@ export default function ChatPage() {
             <div className="space-y-2">
               <SectionTitle>Integrations</SectionTitle>
               <IntegrationsGrid />
+            </div>
+          </BlurFade>
+
+          <BlurFade delay={0.5}>
+            <div className="mt-8 text-center">
+              <p className="text-sm text-muted-foreground">
+                Powered by AI • Built for Solana • Open Source
+              </p>
+              <div className="mt-3 flex items-center justify-center gap-4">
+                <a
+                  href="https://x.com/thecorgod1234"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-sm text-muted-foreground transition-colors hover:text-primary"
+                >
+                  Follow us on X
+                </a>
+                <span className="text-muted-foreground">•</span>
+                <a
+                  href="https://github.com/EmadQureshiKhi/agent-challenge-Cor"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-sm text-muted-foreground transition-colors hover:text-primary"
+                >
+                  GitHub
+                </a>
+              </div>
             </div>
           </BlurFade>
         </div>
