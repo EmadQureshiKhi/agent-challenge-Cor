@@ -21,10 +21,15 @@ export function SolanaWalletProvider({
 }: {
   children: React.ReactNode;
 }) {
-  // Use mainnet
-  const network = WalletAdapterNetwork.Mainnet;
+  // Get network from environment variable (default to devnet for testing)
+  const networkEnv = process.env.NEXT_PUBLIC_SOLANA_NETWORK || 'devnet';
+  const network = networkEnv === 'mainnet-beta' 
+    ? WalletAdapterNetwork.Mainnet 
+    : networkEnv === 'testnet'
+    ? WalletAdapterNetwork.Testnet
+    : WalletAdapterNetwork.Devnet;
 
-  // Use Helius RPC or fallback to public RPC
+  // Use custom RPC or fallback to public RPC
   const endpoint = useMemo(
     () =>
       process.env.NEXT_PUBLIC_HELIUS_RPC_URL || clusterApiUrl(network),
