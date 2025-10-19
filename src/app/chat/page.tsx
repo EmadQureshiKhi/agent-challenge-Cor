@@ -1,15 +1,22 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useCallback, useEffect, useState } from 'react';
+import { usePathname } from 'next/navigation';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
+import { Attachment, JSONValue } from 'ai';
+import { useChat } from 'ai/react';
+import { v4 as uuidv4 } from 'uuid';
 import BlurFade from '@/components/ui/blur-fade';
-import { Card } from '@/components/ui/card';
 import TypingAnimation from '@/components/ui/typing-animation';
 import { SimpleInput } from './simple-input';
 import { SimpleSuggestion } from './simple-suggestion';
 import { IntegrationsGrid } from '@/app/home/components/integrations-grid';
+import { ChatInterface } from './chat-interface';
 import { cn } from '@/lib/utils';
+import { useConversations } from '@/hooks/use-conversations';
+import { useWalletUser } from '@/hooks/use-wallet-user';
+import { EVENTS } from '@/lib/events';
 
 const suggestions = [
   {
@@ -29,7 +36,7 @@ const suggestions = [
   },
   {
     title: 'Trending Tokens',
-    description: 'Discover what\'s hot on Solana right now',
+    description: "Discover what's hot on Solana right now",
     prompt: 'Show me trending tokens on Solana',
   },
 ];
@@ -48,9 +55,69 @@ function SectionTitle({ children }: SectionTitleProps) {
 
 export default function ChatPage() {
   const { publicKey } = useWallet();
+  const { userId } = useWalletUser();
+  const pathname = usePathname();
   const [showChat, setShowChat] = useState(false);
-  const [input, setInput] = useState('');
-  const [initialMessage, setInitialMessage] = useState('');
+  const [chatId, setChatId] = useState(() => uuidv4());
+  const { conversations, refreshConversations } = useConversations(userId || undefined);
+
+  const resetChat = useCallback(() => {
+    setShowChat(false);
+    setChatId(uuidv4());
+  }, []);
+
+  const { messages, input, handleSubmit, setInput, error } = useChat({
+    api: '/api/chat',
+    id: chatId,
+    initialMessages: [],
+    body: { id: chatId },
+    onFinish: () => {
+      // Only refresh if we have a new conversation that's not in the list
+      if (chatId && !conversations?.find((conv) => conv.id === chatId)) {
+        refreshConversations().then(() => {
+          // Dispatch event to mark conversation as read
+          window.dispatchEvent(new CustomEvent(EVENTS.CONVERSATION_READ));
+        });
+      }
+    },
+    onError: (error) => {
+      console.error('Chat error:', error);
+    },
+    experimental_prepareRequestBody: ({ messages }) => {
+      return {
+        message: messages[messages.length - 1],
+        id: chatId,
+      } as unknown as JSONValue;
+    },
+  });
+
+  // Log any errors
+  useEffect(() => {
+    if (error) {
+      console.error('Chat error:', error);
+    }
+  }, [error]);
+
+  // Reset chat when pathname changes to /chat
+  useEffect(() => {
+    if (pathname === '/chat') {
+      resetChat();
+    }
+  }, [pathname, resetChat]);
+
+  // Handle browser back/forward
+  useEffect(() => {
+    const handlePopState = () => {
+      if (location.pathname === '/chat') {
+        resetChat();
+      } else if (location.pathname === `/chat/${chatId}`) {
+        setShowChat(true);
+      }
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, [chatId, resetChat]);
 
   // Show wallet connection prompt if not connected
   if (!publicKey) {
@@ -69,15 +136,48 @@ export default function ChatPage() {
     );
   }
 
-  const handleSuggestionClick = (prompt: string) => {
-    setInput(prompt);
-    setInitialMessage(prompt);
-    setShowChat(true);
-  };
+  const handleSend = async (value: string, attachments?: Attachment[]) => {
+    if (!value.trim() && (!attachments || attachments.length === 0)) {
+      return;
+    }
 
-  const handleSubmit = (message: string) => {
-    setInitialMessage(message);
+    // Create a synthetic event for handleSubmit
+    const fakeEvent = {
+      preventDefault: () => {},
+      type: 'submit',
+    } as React.FormEvent;
+
+    // Submit the message
+    await handleSubmit(fakeEvent, {
+      data: value,
+      experimental_attachments: attachments || [],
+    });
+
+    // Save conversation to API
+    if (userId) {
+      try {
+        await fetch('/api/conversations', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            userId,
+            conversation: {
+              id: chatId,
+              title: value.substring(0, 50) || 'New Chat',
+              userId,
+            },
+          }),
+        });
+        // Refresh conversations list
+        refreshConversations();
+      } catch (error) {
+        console.error('Failed to save conversation:', error);
+      }
+    }
+
+    // Update UI state and URL
     setShowChat(true);
+    window.history.replaceState(null, '', `/chat/${chatId}`);
   };
 
   const mainContent = (
@@ -98,7 +198,9 @@ export default function ChatPage() {
       <div className="mx-auto w-full max-w-3xl space-y-8">
         <BlurFade delay={0.1}>
           <SimpleInput
-            onSubmit={handleSubmit}
+            value={input}
+            onChange={setInput}
+            onSubmit={handleSend}
             placeholder="Ask me anything about Solana..."
           />
         </BlurFade>
@@ -112,7 +214,7 @@ export default function ChatPage() {
                   <SimpleSuggestion
                     key={suggestion.title}
                     {...suggestion}
-                    onClick={() => handleSuggestionClick(suggestion.prompt)}
+                    onClick={() => setInput(suggestion.prompt)}
                   />
                 ))}
               </div>
@@ -157,31 +259,28 @@ export default function ChatPage() {
     </div>
   );
 
-  if (showChat) {
-    return (
-      <div className="flex h-screen w-full flex-col">
-        <div className="flex-1 overflow-y-auto p-6">
-          <div className="mx-auto max-w-4xl">
-            <Card className="p-6">
-              <div className="mb-4 text-center">
-                <h3 className="text-xl font-semibold">Chat Interface</h3>
-                <p className="text-sm text-muted-foreground">
-                  Your message: <span className="font-medium">{initialMessage}</span>
-                </p>
-                <p className="mt-2 text-xs text-muted-foreground">
-                  Mastra agent integration coming next!
-                </p>
-              </div>
-              <SimpleInput
-                onSubmit={(msg) => console.log('New message:', msg)}
-                placeholder="Continue the conversation..."
-              />
-            </Card>
-          </div>
+  return (
+    <div className="relative h-screen">
+      {!showChat && (
+        <div
+          className={cn(
+            'absolute inset-0 overflow-y-auto overflow-x-hidden transition-opacity duration-300',
+            showChat ? 'pointer-events-none opacity-0' : 'opacity-100',
+          )}
+        >
+          {mainContent}
         </div>
-      </div>
-    );
-  }
-
-  return mainContent;
+      )}
+      {showChat && (
+        <div
+          className={cn(
+            'absolute inset-0 transition-opacity duration-300',
+            showChat ? 'opacity-100' : 'pointer-events-none opacity-0',
+          )}
+        >
+          <ChatInterface id={chatId} initialMessages={messages} />
+        </div>
+      )}
+    </div>
+  );
 }

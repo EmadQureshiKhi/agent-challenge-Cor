@@ -1,22 +1,28 @@
 'use client';
 
-import { useState, KeyboardEvent } from 'react';
+import { KeyboardEvent } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { SendHorizontal } from 'lucide-react';
+import { Attachment } from 'ai';
 
 interface SimpleInputProps {
-  onSubmit: (message: string) => void;
+  value: string;
+  onChange: (value: string) => void;
+  onSubmit: (message: string, attachments?: Attachment[]) => void;
   placeholder?: string;
 }
 
-export function SimpleInput({ onSubmit, placeholder = "Ask me anything..." }: SimpleInputProps) {
-  const [value, setValue] = useState('');
-
+export function SimpleInput({
+  value,
+  onChange,
+  onSubmit,
+  placeholder = 'Ask me anything...',
+}: SimpleInputProps) {
   const handleSubmit = () => {
     if (value.trim()) {
       onSubmit(value.trim());
-      setValue('');
+      onChange('');
     }
   };
 
@@ -31,7 +37,7 @@ export function SimpleInput({ onSubmit, placeholder = "Ask me anything..." }: Si
     <div className="flex gap-2">
       <Textarea
         value={value}
-        onChange={(e) => setValue(e.target.value)}
+        onChange={(e) => onChange(e.target.value)}
         onKeyDown={handleKeyDown}
         placeholder={placeholder}
         className="min-h-[60px] resize-none"

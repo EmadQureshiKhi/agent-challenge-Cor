@@ -1,19 +1,10 @@
 import { Suspense } from 'react';
-
 import { Metadata } from 'next';
-import { notFound } from 'next/navigation';
-
-import { verifyUser } from '@/server/actions/user';
-import {
-  dbGetConversation,
-  dbGetConversationMessages,
-} from '@/server/db/queries';
-
 import ChatInterface from './chat-interface';
 import { ChatSkeleton } from './chat-skeleton';
 
 /**
- * Generates metadata for the chat page based on conversation details
+ * Generates metadata for the chat page
  */
 export async function generateMetadata({
   params,
@@ -21,55 +12,21 @@ export async function generateMetadata({
   params: Promise<{ id: string }>;
 }): Promise<Metadata> {
   const { id } = await params;
-  const conversation = await dbGetConversation({ conversationId: id });
-
-  if (!conversation) {
-    return {
-      title: 'Chat Not Found',
-      description: 'The requested chat conversation could not be found.',
-    };
-  }
 
   return {
-    title: `Chat - ${conversation.title || 'Untitled Conversation'}`,
-    description: `Chat conversation: ${conversation.title || 'Untitled Conversation'}`,
+    title: `Chat - CordAi`,
+    description: `Chat conversation with CordAi`,
   };
 }
 
 /**
- * Component responsible for fetching and validating chat data
- * Handles authentication, data loading, and access control
+ * Component responsible for rendering chat
  */
 async function ChatData({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const conversation = await dbGetConversation({ conversationId: id });
 
-  if (!conversation) {
-    return notFound();
-  }
-
-  // Verify user authentication and access rights
-  const authResponse = await verifyUser();
-  const userId = authResponse?.data?.data?.id;
-
-  // Check if user has access to private conversation
-  if (
-    conversation.visibility === 'PRIVATE' &&
-    (!userId || conversation.userId !== userId)
-  ) {
-    return notFound();
-  }
-
-  // Load conversation messages
-  const messagesFromDB = await dbGetConversationMessages({
-    conversationId: id,
-  });
-
-  if (!messagesFromDB) {
-    return notFound();
-  }
-
-  return <ChatInterface id={id} initialMessages={messagesFromDB} />;
+  // Render the chat interface - it will handle loading messages
+  return <ChatInterface id={id} initialMessages={[]} />;
 }
 
 /**
