@@ -62,11 +62,18 @@ export function useConversations(userId?: string) {
 
   const deleteConversation = useCallback(
     async (id: string): Promise<void> => {
+      if (!userId) {
+        throw new Error('User ID required to delete conversation');
+      }
+
       try {
         // Perform actual deletion first
-        const response = await fetch('/api/chat', {
+        const response = await fetch('/api/conversations', {
           method: 'DELETE',
-          body: JSON.stringify({ id }),
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ userId, conversationId: id }),
         });
 
         if (!response.ok) {
@@ -85,7 +92,7 @@ export function useConversations(userId?: string) {
         throw error; // Re-throw to handle in the component
       }
     },
-    [removeConversation, refreshConversations],
+    [userId, removeConversation, refreshConversations],
   );
 
   const handleRename = async (id: string, newTitle: string) => {
