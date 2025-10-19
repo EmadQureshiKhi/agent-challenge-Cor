@@ -42,7 +42,7 @@ import {
 } from '@/components/ui/sidebar';
 import { useConversations } from '@/hooks/use-conversations';
 import usePolling from '@/hooks/use-polling';
-import { useUser } from '@/hooks/use-user';
+import { useWalletUser } from '@/hooks/use-wallet-user';
 import { EVENTS } from '@/lib/events';
 import { cn } from '@/lib/utils';
 import { markConversationAsRead } from '@/server/actions/conversation';
@@ -114,7 +114,7 @@ const ConversationMenuItem = ({
       toast.success('Conversation deleted');
 
       // Navigate and refresh after successful deletion
-      router.replace('/home');
+      router.replace('/chat');
       router.refresh();
 
       // Emit the event to refresh actions
@@ -200,7 +200,7 @@ const ConversationMenuItem = ({
 
 export const AppSidebarConversations = () => {
   const pathname = usePathname();
-  const { isLoading: isUserLoading, user } = useUser();
+  const { userId, isConnected } = useWalletUser();
   const {
     conversations,
     isLoading: isConversationsLoading,
@@ -210,7 +210,7 @@ export const AppSidebarConversations = () => {
     setActiveId,
     refreshConversations,
     markAsRead,
-  } = useConversations(user?.id);
+  } = useConversations(userId || undefined);
 
   // Add state for collapsible
   const [isOpen, setIsOpen] = useState(true);
@@ -256,15 +256,8 @@ export const AppSidebarConversations = () => {
     },
   });
 
-  if (isUserLoading) {
-    return (
-      <SidebarGroup>
-        <SidebarGroupLabel>Conversations</SidebarGroupLabel>
-        <div className="flex items-center justify-center">
-          <Loader2 className="mt-4 h-4 w-4 animate-spin" />
-        </div>
-      </SidebarGroup>
-    );
+  if (!isConnected) {
+    return null;
   }
 
   return (

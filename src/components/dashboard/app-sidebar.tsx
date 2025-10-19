@@ -20,7 +20,6 @@ import {
 } from '@/components/ui/sidebar';
 import { APP_VERSION, IS_BETA } from '@/lib/constants';
 
-import { AppSidebarAutomations } from './app-sidebar-automations';
 import { AppSidebarConversations } from './app-sidebar-conversations';
 import { AppSidebarUser } from './app-sidebar-user';
 
@@ -62,9 +61,9 @@ const AppSidebarFooter = () => {
 
 const ExploreItems = [
   {
-    title: 'Home',
-    url: '/home',
-    segment: 'home',
+    title: 'Chat',
+    url: '/chat',
+    segment: 'chat',
     icon: HomeIcon,
     external: false,
   },
@@ -89,28 +88,14 @@ const ExploreItems = [
     icon: Bookmark,
     external: false,
   },
-  // {
-  //     title: "Agents",
-  //     url: "/agents",
-  //     segment: "agents",
-  //     icon: Bot,
-  //     external: false,
-  // },
-  // {
-  //     title: "Automations",
-  //     url: "/automations",
-  //     segment: "automations",
-  //     icon: Workflow,
-  //     external: false,
-  // }
 ] as const;
 
 export function AppSidebar() {
   const pathname = usePathname();
 
   const getIsActive = (itemSegment: string) => {
-    if (itemSegment === 'home') {
-      return pathname === '/home';
+    if (itemSegment === 'chat') {
+      return pathname === '/chat' || pathname.startsWith('/chat/');
     }
     return pathname.startsWith(`/${itemSegment}`);
   };
@@ -146,7 +131,6 @@ export function AppSidebar() {
           </SidebarGroup>
 
           <AppSidebarConversations />
-          <AppSidebarAutomations />
         </SidebarContent>
       </SidebarContent>
 

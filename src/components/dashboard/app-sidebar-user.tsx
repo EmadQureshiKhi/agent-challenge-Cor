@@ -3,8 +3,10 @@
 import Link from 'next/link';
 
 import { RiTwitterXFill } from '@remixicon/react';
-import { BookOpen, ChevronsUpDown, HelpCircle, Settings } from 'lucide-react';
+import { BookOpen, ChevronsUpDown, HelpCircle, Settings, Copy } from 'lucide-react';
 import { LogOut } from 'lucide-react';
+import { useWallet } from '@solana/wallet-adapter-react';
+import { toast } from 'sonner';
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
@@ -22,61 +24,59 @@ import {
 } from '@/components/ui/sidebar';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { useUser } from '@/hooks/use-user';
 
 export const AppSidebarUser = () => {
-  const { isLoading, user, logout } = useUser();
-  const privyUser = user?.privyUser;
-
+  const { publicKey, disconnect, wallet } = useWallet();
   const isMobile = useIsMobile();
 
-  const label = privyUser?.wallet
-    ? privyUser.wallet.address.substring(0, 5)
-    : privyUser?.email?.address;
-  const subLabel = privyUser?.id?.substring(10);
-  const twitter = privyUser?.twitter;
-  const twitterUsername = twitter?.username;
-  const twitterProfileImage = twitter?.profilePictureUrl;
+  const walletAddress = publicKey?.toBase58();
+  const shortAddress = walletAddress
+    ? `${walletAddress.slice(0, 4)}...${walletAddress.slice(-4)}`
+    : '';
+  const walletName = wallet?.adapter?.name || 'Wallet';
+
+  const handleCopyAddress = () => {
+    if (walletAddress) {
+      navigator.clipboard.writeText(walletAddress);
+      toast.success('Address copied to clipboard');
+    }
+  };
+
+  const handleDisconnect = async () => {
+    try {
+      await disconnect();
+      toast.success('Wallet disconnected');
+    } catch (error) {
+      toast.error('Failed to disconnect wallet');
+    }
+  };
+
+  if (!publicKey) {
+    return null;
+  }
 
   return (
     <SidebarMenu>
       <SidebarMenuItem>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            {isLoading || !privyUser ? (
-              <SidebarMenuButton
-                size="lg"
-                className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
-              >
-                <Skeleton className="h-8 w-8 rounded-lg" />
-                <div className="grid flex-1 gap-1 text-left text-sm leading-tight">
-                  <Skeleton className="h-4 w-20" />
-                  <Skeleton className="h-3 w-16" />
-                </div>
-                <Skeleton className="ml-auto size-4" />
-              </SidebarMenuButton>
-            ) : (
-              <SidebarMenuButton
-                size="lg"
-                className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
-              >
-                <Avatar className="h-8 w-8 rounded-lg">
-                  <AvatarImage src={twitterProfileImage || undefined} />
-                  <AvatarFallback className="rounded-lg">
-                    {label?.substring(0, 2)}
-                  </AvatarFallback>
-                </Avatar>
-                <div className="grid flex-1 text-left text-sm leading-tight">
-                  <span className="truncate font-semibold">
-                    {twitterUsername ? `@${twitterUsername}` : label}
-                  </span>
-                  <span className="truncate text-xs text-muted-foreground">
-                    {subLabel}
-                  </span>
-                </div>
-                <ChevronsUpDown className="ml-auto size-4" />
-              </SidebarMenuButton>
-            )}
+            <SidebarMenuButton
+              size="lg"
+              className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
+            >
+              <Avatar className="h-8 w-8 rounded-lg">
+                <AvatarFallback className="rounded-lg bg-gradient-to-br from-purple-500 to-pink-500">
+                  {shortAddress.substring(0, 2).toUpperCase()}
+                </AvatarFallback>
+              </Avatar>
+              <div className="grid flex-1 text-left text-sm leading-tight">
+                <span className="truncate font-semibold">{walletName}</span>
+                <span className="truncate text-xs text-muted-foreground">
+                  {shortAddress}
+                </span>
+              </div>
+              <ChevronsUpDown className="ml-auto size-4" />
+            </SidebarMenuButton>
           </DropdownMenuTrigger>
           <DropdownMenuContent
             className="w-[--radix-dropdown-menu-trigger-width] min-w-56 rounded-lg"
@@ -85,6 +85,12 @@ export const AppSidebarUser = () => {
             sideOffset={4}
           >
             <DropdownMenuGroup>
+              {/* Copy Address */}
+              <DropdownMenuItem onClick={handleCopyAddress}>
+                <Copy className="mr-2 h-4 w-4" />
+                Copy Address
+              </DropdownMenuItem>
+
               {/* Follow us on X */}
               <DropdownMenuItem
                 onClick={() => window.open('https://x.com/thecorgod1234', '_blank')}
@@ -93,14 +99,6 @@ export const AppSidebarUser = () => {
                 Follow us on X
               </DropdownMenuItem>
 
-              {/* FAQ */}
-              <Link href="/faq">
-                <DropdownMenuItem>
-                  <HelpCircle className="mr-2 h-4 w-4" />
-                  FAQ
-                </DropdownMenuItem>
-              </Link>
-
               {/* GitHub */}
               <DropdownMenuItem
                 onClick={() => window.open('https://github.com/EmadQureshiKhi/agent-challenge-Cor', '_blank')}
@@ -108,19 +106,11 @@ export const AppSidebarUser = () => {
                 <BookOpen className="mr-2 h-4 w-4" />
                 GitHub
               </DropdownMenuItem>
-
-              {/* Account */}
-              <Link href="/account">
-                <DropdownMenuItem>
-                  <Settings className="mr-2 h-4 w-4" />
-                  Account
-                </DropdownMenuItem>
-              </Link>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={logout}>
+            <DropdownMenuItem onClick={handleDisconnect}>
               <LogOut className="mr-2 h-4 w-4" />
-              Log out
+              Disconnect Wallet
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
