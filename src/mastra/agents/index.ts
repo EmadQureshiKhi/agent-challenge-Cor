@@ -1,3 +1,7 @@
+// Export CordAi agent (main agent for the challenge)
+export { cordaiAgent } from './cordai';
+
+// Keep weather agent for reference (can be removed later)
 import "dotenv/config";
 import { openai } from "@ai-sdk/openai";
 import { createOllama } from "ollama-ai-provider-v2";

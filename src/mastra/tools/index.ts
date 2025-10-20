@@ -1,3 +1,7 @@
+// Export Solana tools
+export { getSolPriceTool, getWalletBalanceTool } from './solana';
+
+// Keep weather tool for reference (can be removed later)
 import { createTool } from '@mastra/core/tools';
 import { z } from 'zod';
 
@@ -53,7 +57,7 @@ const getWeather = async (location: string) => {
     throw new Error(`Location '${location}' not found`);
   }
 
-  const { latitude, longitude, name } = geocodingData.results[0];
+  const { latitude, longitude, name} = geocodingData.results[0];
 
   const weatherUrl = `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m,apparent_temperature,relative_humidity_2m,wind_speed_10m,wind_gusts_10m,weather_code`;
 
