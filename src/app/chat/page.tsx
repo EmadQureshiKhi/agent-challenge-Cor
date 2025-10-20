@@ -70,7 +70,7 @@ export default function ChatPage() {
     api: '/api/chat',
     id: chatId,
     initialMessages: [],
-    body: { id: chatId },
+    body: { id: chatId, userId },
     onFinish: () => {
       // Only refresh if we have a new conversation that's not in the list
       if (chatId && !conversations?.find((conv) => conv.id === chatId)) {
@@ -87,6 +87,7 @@ export default function ChatPage() {
       return {
         message: messages[messages.length - 1],
         id: chatId,
+        userId,
       } as unknown as JSONValue;
     },
   });
@@ -278,7 +279,7 @@ export default function ChatPage() {
             showChat ? 'opacity-100' : 'pointer-events-none opacity-0',
           )}
         >
-          <ChatInterface id={chatId} initialMessages={messages} />
+          <ChatInterface id={chatId} initialMessages={messages} userId={userId} />
         </div>
       )}
     </div>

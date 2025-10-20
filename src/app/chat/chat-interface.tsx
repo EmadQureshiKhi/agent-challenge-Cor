@@ -15,6 +15,7 @@ import usePolling from '@/hooks/use-polling';
 interface ChatInterfaceProps {
   id: string;
   initialMessages?: Message[];
+  userId?: string;
 }
 
 function LoadingMessage() {
@@ -40,7 +41,7 @@ function LoadingMessage() {
   );
 }
 
-export function ChatInterface({ id, initialMessages = [] }: ChatInterfaceProps) {
+export function ChatInterface({ id, initialMessages = [], userId }: ChatInterfaceProps) {
   const {
     messages: chatMessages,
     input,
@@ -54,7 +55,7 @@ export function ChatInterface({ id, initialMessages = [] }: ChatInterfaceProps) 
     id,
     initialMessages,
     sendExtraMessageFields: true,
-    body: { id },
+    body: { id, userId },
     onFinish: () => {
       if (window.location.pathname === `/chat/${id}`) {
         window.history.replaceState({}, '', `/chat/${id}`);
@@ -69,6 +70,7 @@ export function ChatInterface({ id, initialMessages = [] }: ChatInterfaceProps) 
       return {
         message: messages[messages.length - 1],
         id,
+        userId,
       } as unknown as JSONValue;
     },
   });
